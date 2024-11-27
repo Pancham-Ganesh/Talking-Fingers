@@ -1,0 +1,29 @@
+{
+  "expo": {
+    "name": "TaFi",
+    "slug": "TaFi",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/App_Images/logo.jpg",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/App_Images/logo.jpg",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "permissions": ["RECORD_AUDIO"],
+        "foregroundImage": "./assets/App_Images/logo.jpg",
+        "backgroundColor": "#ffffff"
+      }
+    },
+    "web": {
+      "favicon": "./assets/App_Images/logo.jpg"
+    }
+  }
+}
