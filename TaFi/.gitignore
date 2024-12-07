@@ -35,5 +35,4 @@ yarn-error.*
 # typescript
 *.tsbuildinfo
 
-#Google API key file
-/assets/keys/cosmic-stacker-442207-a8-fb852e5ef9d4.json
+app-example
