@@ -6,20 +6,23 @@ import {
   View,
   ActivityIndicator,
   TouchableOpacity,
-  TextInput,
-  Image,
   Dimensions,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
 } from "react-native";
+import { ResizeMode, Video } from "expo-av";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { Audio } from "expo-av";
 import { transcribeSpeech } from "@/functions/transcribeSpeech";
 import RecordSpeech from "@/functions/recordSpeech";
 import useWebFocus from "@/hooks/useWebFocus";
 
+// Import the video assets
+import { videos } from "@/assets/videos/videoIndex"; // Updated: Mapping of video files
+
 const screenHeight = Dimensions.get("window").height;
+const rootOrigin = process.env.EXPO_PUBLIC_LOCAL_DEV_IP;
 
 export default function HomeScreen() {
   const [isPlaying, setIsPlaying] = useState(false);
@@ -27,7 +30,12 @@ export default function HomeScreen() {
   const [audioDuration, setAudioDuration] = useState<number | null>(null);
   const [transcribedSpeech, setTranscribedSpeech] = useState<string>("");
   const [isTranscribing, setIsTranscribing] = useState(false);
+  const [islText, setISLText] = useState(""); // Stores the ISL grammar-compatible text
   const [isLoading, setIsLoading] = useState(true);
+  const [currentWordIndex, setCurrentWordIndex] = useState(0); // To track the current video index
+  const [wordList, setWordList] = useState<string[]>([]); // List of words to play videos for
+  const videoRef = useRef(null);
+
   const isWebFocused = useWebFocus();
   const audioRecordingRef = useRef(new Audio.Recording());
   const audioPlaybackRef = useRef<Audio.Sound | null>(null);
@@ -37,7 +45,6 @@ export default function HomeScreen() {
     const getMicAccess = async () => {
       try {
         if (isWebFocused) {
-          // Web-specific permissions
           if (!webAudioPermissionsRef.current) {
             const permissions = await navigator.mediaDevices.getUserMedia({
               audio: true,
@@ -45,7 +52,6 @@ export default function HomeScreen() {
             webAudioPermissionsRef.current = permissions;
           }
         } else {
-          // Release web microphone access
           if (webAudioPermissionsRef.current) {
             webAudioPermissionsRef.current
               .getTracks()
@@ -54,7 +60,6 @@ export default function HomeScreen() {
           }
         }
 
-        // Mobile permissions
         if (!isWebFocused) {
           const { status } = await Audio.getPermissionsAsync();
           if (status !== "granted") {
@@ -72,7 +77,6 @@ export default function HomeScreen() {
     getMicAccess();
   }, [isWebFocused]);
 
-
   const startRecording = async () => {
     await RecordSpeech({
       audioRecordingRef,
@@ -84,11 +88,10 @@ export default function HomeScreen() {
   const stopRecording = async () => {
     console.log("Stopping recording...");
     setIsRecording(false);
-    setIsTranscribing(true); // Show loading state for transcription
+    setIsTranscribing(true);
 
     try {
       if (audioRecordingRef.current) {
-        // Stop and unload the recording
         await audioRecordingRef.current.stopAndUnloadAsync();
         await Audio.setAudioModeAsync({
           allowsRecordingIOS: false,
@@ -97,7 +100,6 @@ export default function HomeScreen() {
         const uri = audioRecordingRef.current.getURI();
         console.log("Recording stopped and stored at", uri);
 
-        // Get recording status to fetch duration
         const status = await audioRecordingRef.current.getStatusAsync();
         if (status?.durationMillis) {
           setAudioDuration(
@@ -105,18 +107,18 @@ export default function HomeScreen() {
           );
         }
 
-        // Transcribe the audio
         const transcript = await transcribeSpeech(audioRecordingRef);
         if (transcript) {
           console.log("Transcription:", transcript);
-          setTranscribedSpeech(transcript); // Store the transcribed text
+          setTranscribedSpeech(transcript);
+
+          await ISLGrammerConv(transcript);
         } else {
           console.warn("No transcription result found.");
           setTranscribedSpeech("");
           setIsTranscribing(false);
         }
 
-        // Prepare for playback
         const { sound } =
           await audioRecordingRef.current.createNewLoadedSoundAsync();
         audioPlaybackRef.current = sound;
@@ -124,65 +126,90 @@ export default function HomeScreen() {
     } catch (error) {
       console.error("Error during stopRecording or transcription:", error);
     } finally {
-      setIsTranscribing(false); // Remove loading state for transcription
+      setIsTranscribing(false);
     }
   };
 
-  // const playRecording = async () => {
-  //   if (audioPlaybackRef.current) {
-  //     const status = await audioPlaybackRef.current.getStatusAsync();
+  const ISLGrammerConv = async (transcribedSpeech: any) => {
+    console.log("Sending transcript for ISL grammar conversion...");
+    setIsTranscribing(true);
 
-  //     // Check if the status is successful and loaded
-  //     if (status.isLoaded) {
-  //       if (!status.isPlaying) {
-  //         console.log("Playing the sound...");
-  //         setIsPlaying(true);
-  //         await audioPlaybackRef.current.playAsync();
-  //         audioPlaybackRef.current.setOnPlaybackStatusUpdate(
-  //           (updatedStatus) => {
-  //             // Ensure updatedStatus is of the correct type
-  //             if (updatedStatus.isLoaded && !updatedStatus.isPlaying) {
-  //               setIsPlaying(false);
-  //             }
-  //           }
-  //         );
-  //       } else {
-  //         console.log("Pausing the sound...");
-  //         await audioPlaybackRef.current.pauseAsync();
-  //         setIsPlaying(false);
-  //       }
-  //     } else {
-  //       console.error("Sound is not loaded or encountered an error.");
-  //     }
-  //   } else {
-  //     console.error("No sound instance available.");
-  //   }
-  // };
+    try {
+      const response = await fetch(`http://${rootOrigin}:4000/convert-to-isl`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ transcribedSpeech }),
+      });
 
-  // const stopPlayback = async () => {
-  //   if (audioPlaybackRef.current) {
-  //     console.log("Stopping playback...");
-  //     await audioPlaybackRef.current.stopAsync();
-  //     setIsPlaying(false);
-  //   } else {
-  //     console.error("No sound instance available to stop.");
-  //   }
-  // };
+      if (!response.ok) {
+        throw new Error("Failed to fetch ISL grammar-compatible text.");
+      }
+
+      const data = await response.json();
+      console.log("ISL grammar-compatible text received:", data.islText);
+
+      setISLText(data.islText.toUpperCase());
+
+      // Split text into words and reset video index
+      const words = data.islText.split(" ");
+      setWordList(words);
+      setCurrentWordIndex(0);
+    } catch (error) {
+      console.error("Error during ISL grammar conversion:", error);
+    } finally {
+      setIsTranscribing(false);
+    }
+  };
+
+  const handleVideoPlaybackStatus = (status: { didJustFinish: boolean }) => {
+    if (status.didJustFinish) {
+      const nextIndex = currentWordIndex + 1;
+      if (nextIndex < wordList.length) {
+        setCurrentWordIndex(nextIndex);
+      } else {
+        console.log("All videos played");
+      }
+    }
+  };
+
+  // Debug and verify the video source mapping
+  useEffect(() => {
+    console.log("Current word list:", wordList);
+    console.log("Current word index:", currentWordIndex);
+  }, [wordList, currentWordIndex]);
+
+  // Stop and restart video playback if the word changes
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.stopAsync().then(() => {
+        videoRef.current.playAsync();
+      });
+    }
+  }, [currentWordIndex]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (videoRef.current) {
+        videoRef.current.unloadAsync();
+      }
+    };
+  }, []);
 
   return (
     <ScrollView>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0} // Adjust this offset as needed
+        keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0}
       >
         <SafeAreaView style={styles.container}>
-          {/* Header */}
           <View style={styles.box_1}>
             <Text style={styles.headerText}>Ta-Fi</Text>
           </View>
 
-          {/* Transcription Area */}
           <View style={styles.box_2}>
             <View style={styles.transcriptionContainer}>
               {isTranscribing ? (
@@ -201,7 +228,23 @@ export default function HomeScreen() {
             </View>
           </View>
 
-          {/* Microphone Button */}
+          <View style={styles.container_2}>
+            <Text style={{ fontSize: 24, marginBottom: 20 }}>
+              {islText || "ISL Grammar Text Will Appear Here"}
+            </Text>
+            {wordList.length > 0 && (
+              <Video
+                ref={videoRef}
+                key={wordList[currentWordIndex]} // Force re-render on word change
+                source={videos[wordList[currentWordIndex]]}
+                style={styles.video}
+                resizeMode={ResizeMode.CONTAIN}
+                shouldPlay
+                onPlaybackStatusUpdate={handleVideoPlaybackStatus}
+              />
+            )}
+          </View>
+
           <View style={styles.box_3}>
             <TouchableOpacity
               style={{
@@ -219,25 +262,6 @@ export default function HomeScreen() {
               )}
             </TouchableOpacity>
           </View>
-
-          {/* Input and Actions */}
-          <View style={styles.box_4}>
-            <TextInput style={styles.input} placeholder="Enter a Prompt" />
-            <View style={styles.box_4_1}>
-              <TouchableOpacity style={styles.button}>
-                <Image
-                  source={require("../assets/images/send.png")} // Replace with your send icon
-                  style={styles.buttonIcon}
-                />
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.button}>
-                <Image
-                  source={require("../assets/images/voice.png")} // Replace with your voice icon
-                  style={styles.buttonIcon}
-                />
-              </TouchableOpacity>
-            </View>
-          </View>
         </SafeAreaView>
       </KeyboardAvoidingView>
     </ScrollView>
@@ -247,8 +271,6 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     height: screenHeight,
-    // backgroundColor: 'black',
-    // margin: 10,
   },
   box_1: {
     height: screenHeight * 0.1,
@@ -257,8 +279,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     borderBottomColor: "black",
     borderBottomWidth: 2,
-    // backgroundColor: 'blue',
-    // margin: 10,
   },
   headerText: {
     fontSize: 42,
@@ -268,7 +288,6 @@ const styles = StyleSheet.create({
     height: screenHeight * 0.4,
     alignItems: "center",
     justifyContent: "center",
-    // backgroundColor: 'yellow',
     margin: 10,
     paddingHorizontal: 15,
   },
@@ -288,57 +307,29 @@ const styles = StyleSheet.create({
     padding: 5,
     color: "#000",
     textAlign: "left",
-    width: "100%",
   },
-
+  container_2: {
+    height: screenHeight * 0.3,
+    justifyContent: "center",
+    alignItems: "center",
+    margin: 20,
+    paddingHorizontal: 20,
+  },
+  video: {
+    width: 350,
+    height: 300,
+  },
   box_3: {
-    height: screenHeight * 0.23,
+    height: screenHeight * 0.2,
     alignItems: "center",
     justifyContent: "center",
-    // backgroundColor: 'green',
-    // margin: 10,
-    paddingTop: 30,
   },
   microphoneButton: {
-    backgroundColor: "red",
-    width: 95,
-    height: 95,
-    marginTop: 100,
+    height: 70,
+    width: 70,
+    backgroundColor: "rgb(19, 124, 221)",
     borderRadius: 50,
-    alignItems: "center",
     justifyContent: "center",
-  },
-
-  box_4: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "flex-end",
-    justifyContent: "space-evenly",
-    paddingBottom: 25,
-    padding: 10,
-    // backgroundColor: 'lightblue',
-    // margin: 10,
-  },
-  input: {
-    flex: 0.9,
-    height: 50,
-    borderColor: "gray",
-    borderWidth: 3,
-    marginRight: 0,
-    paddingHorizontal: 10,
-  },
-  box_4_1: {
-    flexDirection: "row",
-    height: 50,
     alignItems: "center",
-    justifyContent: "center",
-    // backgroundColor: 'red',
-  },
-  button: {
-    marginRight: 10,
-  },
-  buttonIcon: {
-    width: 38,
-    height: 38,
   },
 });

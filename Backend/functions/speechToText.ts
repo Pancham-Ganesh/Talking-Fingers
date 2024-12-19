@@ -15,6 +15,7 @@ export const speechToText = async (req: Request, res: Response) => {
     return res.status(422).send("No audio config was provided.");
 
   try {
+    console.log("hello")
     const speechResults = await fetch(
       "https://speech.googleapis.com/v1/speech:recognize",
       {
