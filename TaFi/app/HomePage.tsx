@@ -16,7 +16,7 @@ import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { Audio } from "expo-av";
 import { transcribeSpeech } from "@/functions/transcribeSpeech";
 import RecordSpeech from "@/functions/recordSpeech";
-import useWebFocus from "@/hooks/useWebFocus";
+
 
 // Import the video assets
 import { videos } from "@/assets/videos/videoIndex"; // Updated: Mapping of video files
@@ -36,37 +36,20 @@ export default function HomeScreen() {
   const [wordList, setWordList] = useState<string[]>([]); // List of words to play videos for
   const videoRef = useRef(null);
 
-  const isWebFocused = useWebFocus();
   const audioRecordingRef = useRef(new Audio.Recording());
   const audioPlaybackRef = useRef<Audio.Sound | null>(null);
   const webAudioPermissionsRef = useRef<MediaStream | null>(null);
 
+
   useEffect(() => {
     const getMicAccess = async () => {
       try {
-        if (isWebFocused) {
-          if (!webAudioPermissionsRef.current) {
-            const permissions = await navigator.mediaDevices.getUserMedia({
-              audio: true,
-            });
-            webAudioPermissionsRef.current = permissions;
-          }
-        } else {
-          if (webAudioPermissionsRef.current) {
-            webAudioPermissionsRef.current
-              .getTracks()
-              .forEach((track) => track.stop());
-            webAudioPermissionsRef.current = null;
-          }
-        }
-
-        if (!isWebFocused) {
-          const { status } = await Audio.getPermissionsAsync();
-          if (status !== "granted") {
-            const { granted } = await Audio.requestPermissionsAsync();
-            if (!granted) {
-              throw new Error("Audio recording permission not granted");
-            }
+        // Check microphone permissions on mobile
+        const { status } = await Audio.getPermissionsAsync();
+        if (status !== "granted") {
+          const { granted } = await Audio.requestPermissionsAsync();
+          if (!granted) {
+            throw new Error("Audio recording permission not granted");
           }
         }
       } catch (error) {
@@ -75,7 +58,7 @@ export default function HomeScreen() {
     };
 
     getMicAccess();
-  }, [isWebFocused]);
+  }, []); // Empty dependency array ensures it runs once on mount
 
   const startRecording = async () => {
     await RecordSpeech({
