@@ -299,6 +299,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginHorizontal: 10,
     paddingHorizontal: 15,
+    marginTop: 10,
   },
   transcriptionContainer: {
     backgroundColor: "#ececec",
