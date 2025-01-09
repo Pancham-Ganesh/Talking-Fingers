@@ -229,9 +229,15 @@ export default function HomeScreen() {
           </View>
 
           <View style={styles.container_2}>
-            <Text style={{ fontSize: 24, marginBottom: 0 }}>
-              {islText || "ISL Grammar Text Will Appear Here"}
-            </Text>
+            <ScrollView
+              style={styles.islTextContainer}
+              contentContainerStyle={{ alignItems: "center" }}
+            >
+              <Text style={styles.islText}>
+                {islText || "ISL Grammar Text Will Appear Here"}
+              </Text>
+            </ScrollView>
+
             {wordList.length > 0 && (
               <Video
                 ref={videoRef}
@@ -244,6 +250,7 @@ export default function HomeScreen() {
               />
             )}
           </View>
+
           <View style={styles.box_3}>
             <TouchableOpacity
               style={{
@@ -269,7 +276,8 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   container: {
-    height: screenHeight,
+    flex: 1,
+    backgroundColor: "#f8f9fa",
   },
   box_1: {
     height: screenHeight * 0.1,
@@ -278,45 +286,70 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     borderBottomColor: "black",
     borderBottomWidth: 2,
+    backgroundColor: "#007BFF",
   },
   headerText: {
     fontSize: 42,
     fontFamily: "LexendExa",
+    color: "white",
   },
   box_2: {
-    height: screenHeight * 0.4,
+    flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    margin: 10,
+    marginHorizontal: 10,
     paddingHorizontal: 15,
   },
   transcriptionContainer: {
-    backgroundColor: "rgb(220,220,220)",
+    backgroundColor: "#ececec",
     width: "100%",
-    height: 300,
-    padding: 20,
-    marginBottom: 20,
-    borderRadius: 5,
-    flexDirection: "row",
+    height: 150,
+    padding: 15,
+    marginBottom: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#ddd",
     alignItems: "flex-start",
     justifyContent: "flex-start",
   },
   transcribedText: {
-    fontSize: 20,
-    padding: 5,
-    color: "#000",
+    fontSize: 18,
+    lineHeight: 24,
+    color: "#333",
     textAlign: "left",
   },
   container_2: {
-    height: screenHeight * 0.3,
+    flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    margin: 5,
+    marginHorizontal: 10,
     paddingHorizontal: 20,
+    paddingVertical: 10,
+    backgroundColor: "#f1f3f4",
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#ddd",
+  },
+  islTextContainer: {
+    backgroundColor: "#f8f9fa",
+    width: "100%",
+    maxHeight: 150,
+    padding: 10,
+    marginBottom: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#ddd",
+  },
+  islText: {
+    fontSize: 18,
+    lineHeight: 24,
+    color: "#007BFF",
+    textAlign: "center",
   },
   video: {
-    width: 350,
-    height: 300,
+    width: 300,
+    height: 250,
+    marginTop: 10,
   },
   box_3: {
     height: screenHeight * 0.2,
@@ -326,9 +359,15 @@ const styles = StyleSheet.create({
   microphoneButton: {
     height: 70,
     width: 70,
-    backgroundColor: "rgb(19, 124, 221)",
+    backgroundColor: "#137cdd",
     borderRadius: 50,
     justifyContent: "center",
     alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 3,
+    elevation: 4,
   },
 });
+
