@@ -1,3 +1,4 @@
+import string
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from dotenv import load_dotenv
@@ -47,20 +48,41 @@ def convert_to_isl():
             messages=[
                 {
                     "role": "system",
-                    "content": "You are an assistant specializing in converting English text into Indian Sign Language (ISL) grammar-compatible text."
+                    "content": (
+                        "You are an expert linguist specializing in Indian Sign Language (ISL). "
+                        "Your task is to convert spoken English sentences into ISL-compatible grammar using a predefined vocabulary. "
+                        "The ISL translation must only use the following words:\n\n"
+                        "0, 1, 2, 3, 4, 5, 6, 7, 8, 9, A, AFTER, AGAIN, AGAINST, AGE, ALL, ALONE, ALSO, AND, ASK, AT, B, BE, "
+                        "BEAUTIFUL, BEFORE, BEST, BETTER, BUSY, BUT, BYE, C, CAN, CANNOT, CHANGE, COLLEGE, COME, COMPUTER, D, "
+                        "DAY, DISTANCE, DO, E, EAT, ENGINEER, F, FIGHT, FINISH, FROM, G, GLITTER, GO, GOD, GOLD, GOOD, GREAT, H, "
+                        "HAND, HANDS, HAPPY, HELLO, HELP, HER, HERE, HIS, HOME, HOMEPAGE, HOW, I, INVENT, IT, J, K, KEEP, L, "
+                        "LANGUAGE, LAUGH, LEARN, M, ME, MORE, MY, N, NAME, NEXT, NOT, NOW, O, OF, ON, OUR, OUT, P, PRETTY, Q, R, "
+                        "RIGHT, S, SAD, SAFE, SEE, SELF, SIGN, SING, SO, SOUND, STAY, STUDY, T, TALK, TELEVISION, THANK, THAT, "
+                        "THEY, THIS, THOSE, TIME, TO, TYPE, U, US, V, W, WALK, WASH, WAY, WE, WELCOME, WHAT, WHEN, WHERE, WHICH, "
+                        "WHO, WHOLE, WHOSE, WHY, WILL, WITH, WITHOUT, WORDS, WORK, WORLD, WRONG, X, Y, YOU, YOUR, YOURSELF, Z.\n\n"
+                        "If any word in the input sentence is not in this list, replace it with a word from the list that has a "
+                        "similar meaning or is the closest match. Simplify the sentence structure by emphasizing key ideas, "
+                        "removing unnecessary articles, auxiliary verbs, and aligning it with ISL grammar conventions."
+                    )
                 },
                 {
                     "role": "user",
-                    "content": f"Convert the following text to ISL grammar: {transcribed_speech}"
+                    "content": f"Convert the following English text into ISL-compatible grammar: {transcribed_speech}"
                 }
             ]
         )
 
-        # Extract the response
-        isl_text = response['choices'][0]['message']['content'].strip()
-        logging.info("ISL grammar conversion successful: %s", isl_text)
 
-        return jsonify({"islText": isl_text}), 200
+        # Extract the response and strip any leading/trailing whitespace
+        isl_text = response['choices'][0]['message']['content'].strip()
+
+        # Remove punctuation from the extracted response
+        isl_text_no_punctuation = isl_text.translate(str.maketrans('', '', string.punctuation))
+
+        # Log the punctuation-free ISL grammar text
+        logging.info("ISL grammar conversion successful: %s", isl_text_no_punctuation)
+
+        return jsonify({"islText": isl_text_no_punctuation}), 200
 
     except Exception as e:
         logging.error("Error during ISL grammar conversion using OpenAI: %s", str(e))
@@ -140,7 +162,7 @@ def speech_to_text():
         # Transcribe the WAV audio using Whisper model
         try:
             logging.info("Detecting language and transcribing...")
-            result = model.transcribe(temp_wav_path, task="transcribe")  # task="transcribe" enables language detection
+            result = model.transcribe(temp_wav_path, task="translate")  # task="transcribe" enables language detection
             detected_language = result.get("language")
             transcription = result['text']
             logging.info("Detected language: %s", detected_language)

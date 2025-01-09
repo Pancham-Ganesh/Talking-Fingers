@@ -55,7 +55,7 @@
 //         : Platform.OS === "web"
 //         ? "localhost" // or use a different value if necessary for the web
 //         : "localhost"; // fallback for other platforms
-//     const serverUrl = `http://${rootOrigin}:4000`;
+//     const serverUrl = `${rootOrigin}`;
 
 //     console.log("audioUrl: ",base64Uri)
 
@@ -68,8 +68,6 @@
 //     })
 //       .then((res) => res.json())
 //       .catch((e: Error) => console.error(e));
-
-   
 
 //     console.log(serverResponse);
 
@@ -87,7 +85,6 @@
 //     return undefined;
 //   }
 // };
-
 
 import { Audio } from "expo-av";
 import { MutableRefObject } from "react";
@@ -132,7 +129,7 @@ export const transcribeSpeech = async (
       uri: audioUri,
       type: "audio/wav", // Correct MIME type
       name: "recording.wav", // Ensure the file name is set properly
-    });
+    } as any);
 
     console.log("Form data prepared for upload");
 
@@ -140,7 +137,7 @@ export const transcribeSpeech = async (
       Platform.OS === "android" || Platform.OS === "ios"
         ? process.env.EXPO_PUBLIC_LOCAL_DEV_IP
         : "localhost";
-    const serverUrl = `http://${rootOrigin}:4000`;
+    const serverUrl = `${rootOrigin}`;
     console.log("Server URL:", serverUrl);
 
     // Send request to server
@@ -174,11 +171,3 @@ export const transcribeSpeech = async (
     return undefined;
   }
 };
-
-
-
-
-
-
-
-

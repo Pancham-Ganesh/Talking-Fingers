@@ -135,7 +135,7 @@ export default function HomeScreen() {
     setIsTranscribing(true);
 
     try {
-      const response = await fetch(`http://${rootOrigin}:4000/convert-to-isl`, {
+      const response = await fetch(`${rootOrigin}/convert-to-isl`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -229,7 +229,7 @@ export default function HomeScreen() {
           </View>
 
           <View style={styles.container_2}>
-            <Text style={{ fontSize: 24, marginBottom: 20 }}>
+            <Text style={{ fontSize: 24, marginBottom: 0 }}>
               {islText || "ISL Grammar Text Will Appear Here"}
             </Text>
             {wordList.length > 0 && (
@@ -244,7 +244,6 @@ export default function HomeScreen() {
               />
             )}
           </View>
-
           <View style={styles.box_3}>
             <TouchableOpacity
               style={{
@@ -312,7 +311,7 @@ const styles = StyleSheet.create({
     height: screenHeight * 0.3,
     justifyContent: "center",
     alignItems: "center",
-    margin: 20,
+    margin: 5,
     paddingHorizontal: 20,
   },
   video: {
