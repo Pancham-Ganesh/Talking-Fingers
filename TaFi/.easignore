@@ -15,3 +15,8 @@ ios/Pods
 
 # Temp files
 *.tmp
+
+
+../Backend/
+../Whisper_Backend/
+../*

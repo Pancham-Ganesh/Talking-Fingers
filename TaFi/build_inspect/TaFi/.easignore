@@ -1,0 +1,22 @@
+# Ignore dependencies (these will be installed during the build)
+node_modules
+.expo
+.expo-shared
+
+# Ignore system files and logs
+.git
+*.log
+
+# Android-specific files
+android/build
+
+# iOS-specific files
+ios/Pods
+
+# Temp files
+*.tmp
+
+
+../Backend/
+../Whisper_Backend/
+../*
